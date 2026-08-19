@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Rugs Factory — Marketing Dashboard</title>
+<style>
+  :root{
+    --bg:#0E1116; --panel:#161A21; --panel2:#1D222B; --line:#262C36;
+    --ink:#EEF1F5; --mute:#98A1AE; --faint:#6B7482;
+    --accent:#4C8FD6;
+    --good:#3FB37F; --warn:#E0A64A; --crit:#E2685C;
+    --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;
+    -webkit-font-smoothing:antialiased;}
+
+  /* ---------- gate ---------- */
+  #gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;
+    justify-content:center;z-index:50;padding:20px;}
+  .gatebox{width:100%;max-width:340px;text-align:center;}
+  .gatebox h1{font-size:20px;margin:0 0 6px;letter-spacing:-.01em;}
+  .gatebox p{color:var(--mute);font-size:13.5px;margin:0 0 20px;}
+  .gatebox input{width:100%;padding:12px 14px;font-size:16px;font-family:var(--mono);
+    text-align:center;letter-spacing:.2em;background:var(--panel);color:var(--ink);
+    border:1px solid var(--line);border-radius:9px;}
+  .gatebox input:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  .gatebox button{width:100%;margin-top:10px;padding:12px;font-size:14.5px;font-weight:650;
+    background:var(--accent);color:#08131F;border:0;border-radius:9px;cursor:pointer;}
+  .gateerr{color:var(--crit);font-size:13px;margin-top:10px;min-height:18px;}
+
+  #app{display:none;}
+  .wrap{max-width:1120px;margin:0 auto;padding:32px 20px 80px;}
+
+  header{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;
+    border-bottom:1px solid var(--line);padding-bottom:18px;}
+  .kick{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 7px;font-weight:600;}
+  h1.t{margin:0;font-size:clamp(21px,3vw,28px);letter-spacing:-.02em;}
+  .stamp{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--faint);text-align:right;}
+
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:22px 0 0;}
+  .tab{font-size:13px;font-weight:600;padding:8px 14px;border-radius:20px;cursor:pointer;
+    background:var(--panel);border:1px solid var(--line);color:var(--mute);}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#08131F;}
+  .tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+  .grid{display:grid;gap:14px;margin-top:20px;}
+  .g4{grid-template-columns:repeat(auto-fit,minmax(210px,1fr));}
+  .g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr));}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;}
+  .card.click{cursor:pointer;transition:border-color .15s, transform .15s;}
+  .card.click:hover{border-color:var(--accent);transform:translateY(-1px);}
+  .card.click:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .card h3{margin:0;font-size:13px;color:var(--mute);font-weight:600;letter-spacing:.02em;}
+
+  .ringwrap{display:flex;align-items:center;gap:16px;margin-top:12px;}
+  .ring{position:relative;flex:0 0 auto;}
+  .ring svg{display:block;transform:rotate(-90deg);}
+  .ring .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;}
+  .ring .pct{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em;}
+  .ring .of{font-size:9.5px;color:var(--faint);font-family:var(--mono);margin-top:1px;}
+  .rmeta .big{font-size:14.5px;font-weight:600;}
+  .rmeta .sm{font-size:12.5px;color:var(--mute);margin-top:3px;}
+
+  .chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;
+    padding:3px 9px;border-radius:20px;font-family:var(--mono);letter-spacing:.02em;}
+  .chip.good{color:var(--good);background:rgba(63,179,127,.13)}
+  .chip.warn{color:var(--warn);background:rgba(224,166,74,.13)}
+  .chip.crit{color:var(--crit);background:rgba(226,104,92,.13)}
+
+  .bars{margin-top:14px;display:flex;flex-direction:column;gap:11px;}
+  .bar .lab{display:flex;justify-content:space-between;font-size:12.5px;color:var(--mute);
+    margin-bottom:5px;}
+  .bar .lab b{color:var(--ink);font-variant-numeric:tabular-nums;font-weight:600;}
+  .bar .track{height:8px;background:var(--panel2);border-radius:5px;overflow:hidden;}
+  .bar .fill{height:100%;border-radius:5px;background:var(--accent);}
+  .bar .fill.good{background:var(--good)} .bar .fill.warn{background:var(--warn)}
+  .bar .fill.crit{background:var(--crit)}
+
+  .list{margin:12px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px;}
+  .list li{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;color:var(--mute);}
+  .list li b{color:var(--ink);font-weight:600;}
+
+  dialog{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:16px;
+    padding:0;max-width:560px;width:calc(100% - 32px);}
+  dialog::backdrop{background:rgba(6,9,13,.72)}
+  .dhead{padding:20px 22px 14px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:10px;}
+  .dhead h4{margin:0;font-size:16px;}
+  .dbody{padding:18px 22px 22px;}
+  .dbody p{margin:0 0 11px;font-size:14px;color:var(--mute);}
+  .dbody p:last-child{margin:0}
+  .dbody b{color:var(--ink)}
+  .dbody code{font-family:var(--mono);font-size:12.5px;background:var(--panel2);
+    border:1px solid var(--line);padding:1px 5px;border-radius:4px;}
+  .dclose{margin-left:auto;background:none;border:0;color:var(--mute);font-size:22px;
+    cursor:pointer;line-height:1;padding:0 4px;}
+  .metric{display:flex;gap:18px;margin:4px 0 14px;flex-wrap:wrap;}
+  .metric div{font-size:12px;color:var(--faint);font-family:var(--mono);}
+  .metric b{display:block;font-family:var(--sans);font-size:20px;color:var(--ink);
+    font-variant-numeric:tabular-nums;margin-bottom:2px;}
+
+  .note{margin-top:22px;font-size:12.5px;color:var(--faint);border-top:1px solid var(--line);
+    padding-top:14px;}
+  .hidden{display:none !important;}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <form class="gatebox" id="gateform">
+    <p class="kick">Rugs Factory</p>
+    <h1>Marketing dashboard</h1>
+    <p>Enter the team passcode to continue.</p>
+    <input id="pass" type="password" inputmode="numeric" autocomplete="off"
+           aria-label="Passcode" placeholder="••••••">
+    <button type="submit">Open dashboard</button>
+    <div class="gateerr" id="gateerr" role="alert"></div>
+  </form>
+</div>
+
+<div id="app">
+<div class="wrap">
+  <header>
+    <div>
+      <p class="kick">rugsfactory.co.uk</p>
+      <h1 class="t">Marketing dashboard</h1>
+    </div>
+    <div class="stamp">measured<br><b id="stamp">19 Aug 2026, 12:01</b></div>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-panel="overview">Overview</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="channels">Channels</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="content">Content &amp; SEO</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="speed">Speed</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="actions">Actions</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <section data-view="overview">
+    <div class="grid g4" id="overviewRings"></div>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Coverage across the catalogue</h3>
+        <div class="bars" id="coverageBars"></div>
+      </div>
+      <div class="card">
+        <h3>Where you stand</h3>
+        <ul class="list">
+          <li><span>✓</span><div><b>Technically clean.</b> Sitemap live, canonicals correct,
+            one H1 per page, fast server response, almost no app bloat.</div></li>
+          <li><span>!</span><div><b>Invisible to you.</b> No analytics and no ad pixels — traffic
+            and conversions are currently unmeasured.</div></li>
+          <li><span>!</span><div><b>Thin on signals.</b> 81% of images have no alt text and the
+            catalogue has zero reviews.</div></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHANNELS -->
+  <section data-view="channels" class="hidden">
+    <div class="grid g4" id="channelCards"></div>
+    <p class="note">Click any channel for detail and the exact next step.</p>
+  </section>
+
+  <!-- CONTENT -->
+  <section data-view="content" class="hidden">
+    <div class="grid g4" id="contentRings"></div>
+    <div class="grid g2">
+      <div class="card"><h3>Structured data by page type</h3>
+        <div class="bars" id="schemaBars"></div>
+      </div>
+      <div class="card"><h3>What's already right</h3>
+        <ul class="list" id="contentGood"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- SPEED -->
+  <section data-view="speed" class="hidden">
+    <div class="grid g4" id="speedCards"></div>
+    <div class="grid g2">
+      <div class="card"><h3>Server response by template</h3><div class="bars" id="ttfbBars"></div></div>
+      <div class="card"><h3>Page weight (HTML)</h3><div class="bars" id="weightBars"></div></div>
+    </div>
+    <p class="note">Measured server-side. Core Web Vitals (LCP, INP, CLS) come from real
+    browsers and need Search Console field data — they are not estimated here.</p>
+  </section>
+
+  <!-- ACTIONS -->
+  <section data-view="actions" class="hidden">
+    <div class="grid g2" id="actionCards"></div>
+  </section>
+
+  <p class="note" id="foot"></p>
+</div>
+</div>
+
+<dialog id="modal">
+  <div class="dhead"><h4 id="mtitle"></h4><button class="dclose" id="mclose" aria-label="Close">×</button></div>
+  <div class="dbody" id="mbody"></div>
+</dialog>
+
+<script>
+/* ── Measured 19 Aug 2026 against rugsfactory.co.uk and the Shopify catalogue.
+      Every figure below was counted, not estimated. Update by re-running
+      scripts/seo_audit.py and editing this block. ── */
+const DATA = {
+  stamp: "19 Aug 2026, 12:01",
+  catalogue: { products: 388, images: 3311, imagesWithAlt: 629,
+               seoTitles: 67, seoDescs: 74, collections: 32, collectionsSeo: 6,
+               reviews: 0, productsWithReviews: 0, sitemapProducts: 389 },
+  channels: [
+    { key:"google", name:"Google Search", state:"good", stat:"Verified",
+      sub:"Search Console active",
+      detail:`<p><b>Verified and crawlable.</b> The verification tag is live on the storefront and
+      the XML sitemap is serving <b>389 products</b> plus pages, collections and blogs.</p>
+      <p>robots.txt allows every public template, and canonical tags are correct and
+      self-referencing on home, collection and product pages.</p>
+      <p><b>Next:</b> nothing blocking. Once analytics is installed you'll be able to see which
+      queries actually bring traffic.</p>` },
+    { key:"bing", name:"Bing / Copilot", state:"crit", stat:"Not verified",
+      sub:"No webmaster tag",
+      detail:`<p>There is no <code>msvalidate.01</code> tag on the site, so Bing Webmaster Tools
+      is not verified — even though you already advertise on Bing.</p>
+      <p>Bing also supplies results to <b>Copilot and ChatGPT search</b>, a fast-growing share of
+      product discovery that Google Search Console can't show you.</p>
+      <p><b>Next:</b> create a Bing Webmaster account, import directly from Google Search Console
+      (a two-click path), and submit the same sitemap.</p>` },
+    { key:"reviews", name:"Product reviews", state:"crit", stat:"0",
+      sub:"across 388 products",
+      detail:`<p><b>The catalogue has no reviews at all.</b> The review system is built into the
+      theme and feeds star ratings into Google via structured data — but with zero reviews there
+      is nothing to show.</p>
+      <p>Star ratings in search results are one of the largest click-through improvements
+      available to a shop this size, and they cost nothing but time.</p>
+      <p><b>Already in motion:</b> the post-purchase email flow asks every customer for a review
+      7 days after delivery, and again at 14 days if they haven't. Reviews should begin arriving
+      on their own.</p>` },
+    { key:"analytics", name:"Analytics", state:"crit", stat:"None",
+      sub:"no GA4, no pixels",
+      detail:`<p><b>No analytics tag and no advertising pixels are installed.</b> Not Google
+      Analytics, not GTM, not a Meta pixel, not Clarity. Klaviyo's onsite script is the only
+      behavioural tracking present.</p>
+      <p>This means ad spend on Google, Meta or Bing runs without conversion tracking or
+      retargeting audiences, and no SEO change can be shown to have worked.</p>
+      <p><b>Next:</b> connect GA4 through Shopify's built-in integration — no code required —
+      and add a Meta pixel if you advertise there.</p>` },
+  ],
+  speed: {
+    pages: [ {name:"Home", secs:0.34, kb:105}, {name:"Collection", secs:0.58, kb:509},
+             {name:"Product", secs:0.74, kb:296} ],
+    stylesheets:2, scripts:10, thirdPartyHosts:3, lazyPct:98
+  },
+  schema: [ {name:"Product pages", pct:100, state:"good", note:"Product + Brand + AggregateOffer"},
+            {name:"Homepage", pct:0, state:"crit", note:"no Organization or WebSite"},
+            {name:"Collections", pct:0, state:"warn", note:"no ItemList or Breadcrumb"},
+            {name:"Open Graph", pct:33, state:"warn", note:"product only, 5 tags"} ],
+  actions: [
+    {n:1, title:"Install GA4 and a Meta pixel", effort:"Minutes · Shopify built-in",
+     body:"Nothing else here can be measured until traffic is visible, and any ad spend is currently running blind."},
+    {n:2, title:"Generate alt text for 2,682 images", effort:"Automatable · script ready",
+     body:"The largest on-page gap. Colour and size already exist in variant data, so descriptions can be generated rather than typed."},
+    {n:3, title:"Verify Bing Webmaster Tools", effort:"One meta tag",
+     body:"Opens an organic channel you already pay for on ads, and feeds Copilot and ChatGPT search."},
+    {n:4, title:"Add Organization schema to the homepage", effort:"One snippet",
+     body:"Tells Google the brand name, logo and social profiles. Product pages already do this; the homepage does not."},
+    {n:5, title:"Write SEO fields for 26 collections", effort:"~1 hour",
+     body:"Category pages rank for the highest-intent searches — washable rugs, sisal rugs, runners."},
+    {n:6, title:"Trim the collection page payload", effort:"Theme work",
+     body:"509 KB against a 105 KB homepage. Paginating below the first ~24 products would roughly halve it."},
+  ]
+};
+
+/* ---------- helpers ---------- */
+const el = (t, c, h) => { const n=document.createElement(t); if(c) n.className=c;
+  if(h!==undefined) n.innerHTML=h; return n; };
+const stateColor = s => s==="good" ? "var(--good)" : s==="warn" ? "var(--warn)" : "var(--crit)";
+const pctState = p => p>=80 ? "good" : p>=40 ? "warn" : "crit";
+
+function ring(pct, label, sub, state){
+  const R=34, C=2*Math.PI*R, dash=C*Math.min(pct,100)/100;
+  const col=stateColor(state||pctState(pct));
+  return `<div class="ringwrap">
+    <div class="ring" style="width:84px;height:84px">
+      <svg width="84" height="84" viewBox="0 0 84 84">
+        <circle cx="42" cy="42" r="${R}" fill="none" stroke="var(--panel2)" stroke-width="9"/>
+        <circle cx="42" cy="42" r="${R}" fill="none" stroke="${col}" stroke-width="9"
+          stroke-linecap="round" stroke-dasharray="${dash} ${C-dash}"/>
+      </svg>
+      <div class="mid"><span class="pct">${pct}%</span></div>
+    </div>
+    <div class="rmeta"><div class="big">${label}</div><div class="sm">${sub}</div></div>
+  </div>`;
+}
+
+function bar(label, valueText, pct, state){
+  return `<div class="bar"><div class="lab"><span>${label}</span><b>${valueText}</b></div>
+    <div class="track"><div class="fill ${state||''}" style="width:${Math.max(2,Math.min(pct,100))}%"></div></div></div>`;
+}
+
+/* ---------- render ---------- */
+const c = DATA.catalogue;
+const altPct = Math.round(c.imagesWithAlt*100/c.images);
+const titlePct = Math.round(c.seoTitles*100/c.products);
+const descPct = Math.round(c.seoDescs*100/c.products);
+const colPct = Math.round(c.collectionsSeo*100/c.collections);
+const discovery = 80;   // 4 of 5 discovery signals pass (sitemap, GSC, robots, canonical; Bing fails)
+const tracking = 25;    // 1 of 4 (Klaviyo only)
+
+document.getElementById("stamp").textContent = DATA.stamp;
+document.getElementById("foot").textContent =
+  `Measured ${DATA.stamp} · ${c.products} active products · ${c.images.toLocaleString()} images · ${c.collections} collections`;
+
+document.getElementById("overviewRings").innerHTML = [
+  ["Search discovery", discovery, "4 of 5 signals passing", "warn"],
+  ["Image alt text", altPct, `${c.imagesWithAlt.toLocaleString()} of ${c.images.toLocaleString()}`, null],
+  ["Tracking installed", tracking, "Klaviyo only", null],
+  ["Reviews", 0, `${c.reviews} across ${c.products} products`, null],
+].map(([l,p,s,st]) => `<div class="card">${ring(p,l,s,st)}</div>`).join("");
+
+document.getElementById("coverageBars").innerHTML = [
+  bar("Products in sitemap", `${c.sitemapProducts}/391`, 99, "good"),
+  bar("Image alt text", `${altPct}%`, altPct, "crit"),
+  bar("Custom SEO titles", `${titlePct}%`, titlePct, "warn"),
+  bar("Custom SEO descriptions", `${descPct}%`, descPct, "warn"),
+  bar("Collections with SEO fields", `${c.collectionsSeo}/${c.collections}`, colPct, "warn"),
+].join("");
+
+document.getElementById("channelCards").innerHTML = DATA.channels.map((ch,i)=>`
+  <div class="card click" tabindex="0" role="button" data-ch="${i}">
+    <h3>${ch.name}</h3>
+    <div style="display:flex;align-items:baseline;gap:9px;margin-top:10px">
+      <span style="font-size:24px;font-weight:700;letter-spacing:-.02em">${ch.stat}</span>
+      <span class="chip ${ch.state}">${ch.state==="good"?"✓ OK":ch.state==="warn"?"~ PARTIAL":"! ACTION"}</span>
+    </div>
+    <div style="font-size:12.5px;color:var(--mute);margin-top:5px">${ch.sub}</div>
+  </div>`).join("");
+
+document.getElementById("contentRings").innerHTML = [
+  ["Image alt text", altPct, `${c.images-c.imagesWithAlt} missing`],
+  ["SEO titles", titlePct, `${c.products-c.seoTitles} on defaults`],
+  ["SEO descriptions", descPct, `${c.products-c.seoDescs} on defaults`],
+  ["Collection SEO", colPct, `${c.collections-c.collectionsSeo} missing`],
+].map(([l,p,s]) => `<div class="card">${ring(p,l,s)}</div>`).join("");
+
+document.getElementById("schemaBars").innerHTML =
+  DATA.schema.map(s => bar(`${s.name} — ${s.note}`, s.pct===100?"complete":s.pct===0?"none":"partial",
+                           s.pct||4, s.state)).join("");
+
+document.getElementById("contentGood").innerHTML = [
+  ["Page titles", "65 / 60 / 48 characters — all within Google's display limit"],
+  ["Meta descriptions", "written and distinct on all three main templates"],
+  ["H1 headings", "exactly one per page, no duplicates"],
+  ["Product copy", "386 of 388 have full descriptions — only 2 are thin"],
+  ["Canonical tags", "correct and self-referencing everywhere"],
+].map(([b,t]) => `<li><span>✓</span><div><b>${b}.</b> ${t}</div></li>`).join("");
+
+document.getElementById("speedCards").innerHTML = [
+  ["Server response", "0.34–0.74s", "good", "across three templates"],
+  ["CSS + JS files", `${DATA.speed.stylesheets} + ${DATA.speed.scripts}`, "good", "very lean for Shopify"],
+  ["Third-party hosts", DATA.speed.thirdPartyHosts, "good", "Shop Pay, Klaviyo, Shopify CDN"],
+  ["Images lazy-loaded", DATA.speed.lazyPct+"%", "good", "defer until scrolled to"],
+].map(([l,v,st,s]) => `<div class="card"><h3>${l}</h3>
+  <div style="display:flex;align-items:baseline;gap:9px;margin-top:10px">
+    <span style="font-size:23px;font-weight:700;letter-spacing:-.02em">${v}</span>
+    <span class="chip ${st}">✓ OK</span></div>
+  <div style="font-size:12.5px;color:var(--mute);margin-top:5px">${s}</div></div>`).join("");
+
+const maxSecs = Math.max(...DATA.speed.pages.map(p=>p.secs));
+document.getElementById("ttfbBars").innerHTML = DATA.speed.pages
+  .map(p => bar(p.name, p.secs+"s", p.secs/1.5*100, p.secs<0.8?"good":"warn")).join("");
+const maxKb = Math.max(...DATA.speed.pages.map(p=>p.kb));
+document.getElementById("weightBars").innerHTML = DATA.speed.pages
+  .map(p => bar(p.name, p.kb+" KB", p.kb/maxKb*100, p.kb>400?"warn":"good")).join("");
+
+document.getElementById("actionCards").innerHTML = DATA.actions.map(a=>`
+  <div class="card"><div style="display:flex;gap:11px">
+    <span style="font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:700">
+      ${String(a.n).padStart(2,"0")}</span>
+    <div><h3 style="color:var(--ink);font-size:14.5px;margin-bottom:5px">${a.title}</h3>
+    <p style="margin:0;font-size:13.5px;color:var(--mute)">${a.body}</p>
+    <p style="margin:7px 0 0;font-size:12px;color:var(--faint);font-family:var(--mono)">${a.effort}</p>
+    </div></div></div>`).join("");
+
+/* ---------- interaction ---------- */
+const modal=document.getElementById("modal");
+document.getElementById("channelCards").addEventListener("click", e=>{
+  const card=e.target.closest("[data-ch]"); if(!card) return; openCh(card.dataset.ch);
+});
+document.getElementById("channelCards").addEventListener("keydown", e=>{
+  if(e.key!=="Enter" && e.key!==" ") return;
+  const card=e.target.closest("[data-ch]"); if(!card) return;
+  e.preventDefault(); openCh(card.dataset.ch);
+});
+function openCh(i){
+  const ch=DATA.channels[i];
+  document.getElementById("mtitle").textContent=ch.name;
+  document.getElementById("mbody").innerHTML=
+    `<div class="metric"><div><b>${ch.stat}</b>status</div></div>${ch.detail}`;
+  modal.showModal();
+}
+document.getElementById("mclose").onclick=()=>modal.close();
+modal.addEventListener("click", e=>{ if(e.target===modal) modal.close(); });
+
+document.querySelectorAll(".tab").forEach(t=>{
+  t.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected","false"));
+    t.setAttribute("aria-selected","true");
+    document.querySelectorAll("[data-view]").forEach(v=>
+      v.classList.toggle("hidden", v.dataset.view!==t.dataset.panel));
+  });
+});
+
+/* ---------- gate ----------
+   A deterrent, not security: anyone can read this file's source. For real access
+   control put the site behind Netlify's password protection or Identity. ---------- */
+const PASSCODE = "rugs2026";
+const KEY="rf_dash_ok";
+function unlock(){ document.getElementById("gate").style.display="none";
+  document.getElementById("app").style.display="block"; }
+if (sessionStorage.getItem(KEY)==="1") unlock();
+document.getElementById("gateform").addEventListener("submit", e=>{
+  e.preventDefault();
+  const v=document.getElementById("pass").value.trim();
+  if(v===PASSCODE){ sessionStorage.setItem(KEY,"1"); unlock(); }
+  else { document.getElementById("gateerr").textContent="Incorrect passcode."; }
+});
+</script>
+</body></html>
